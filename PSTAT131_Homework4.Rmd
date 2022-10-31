@@ -1,0 +1,63 @@
+---
+title: "PSTAT131 Homework 4"
+author: "Shivani Kharva"
+date: "2022-10-31"
+output: html_document
+---
+
+# Homework 4
+
+### Load the Data/ Packages
+```{r}
+titanic_data <- read.csv("data/titanic.csv")
+library(tidymodels)
+library(tidyverse)
+tidymodels_prefer()
+```
+
+```{r}
+# Changing `survived` and `pclass` to factors
+survived_levels <- c("Yes", "No")
+
+titanic_data$survived <- factor(titanic_data$survived, levels = survived_levels)
+titanic_data$pclass <- as.factor(titanic_data$pclass)
+
+# Setting the seed
+set.seed(0124)
+```
+
+### Question 1  
+
+```{r}
+# Splitting the data and stratifying on the outcome, `survived`
+titanic_split <- initial_split(titanic_data, prop = 0.70, strata = survived)
+titanic_train <- training(titanic_split)
+titanic_test <- testing(titanic_split)
+```
+
+```{r}
+# Creating recipe identical to Homework 3
+titanic_recipe <- recipe(survived ~ pclass + sex + age + sib_sp + parch + fare, data = titanic_train) %>% 
+  # Using imputation to deal with missing age values
+  step_impute_linear(age, impute_with = imp_vars(pclass, sex, sib_sp, parch, fare)) %>% 
+  # Encoding categorical predictors
+  step_dummy(all_nominal_predictors()) %>% 
+  # Including interactions
+  step_interact(terms = ~ starts_with("sex"):fare + age:fare)
+```
+
+### Question 2  
+```{r}
+k_fold_tuned_recipe <- titanic_recipe %>% 
+  step_poly()
+```
+
+
+
+
+
+
+
+
+
+
