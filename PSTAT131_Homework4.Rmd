@@ -11,7 +11,9 @@ output: html_document
 ```{r}
 titanic_data <- read.csv("data/titanic.csv")
 library(tidymodels)
+library(ISLR)
 library(tidyverse)
+library(discrim)
 tidymodels_prefer()
 ```
 
@@ -48,11 +50,57 @@ titanic_recipe <- recipe(survived ~ pclass + sex + age + sib_sp + parch + fare, 
 
 ### Question 2  
 ```{r}
-k_fold_tuned_recipe <- titanic_recipe %>% 
-  step_poly()
+titanic_folds <- vfold_cv(titanic_train, v = 10)
+titanic_folds
 ```
 
+### Question 3  
 
+### Question 4  
+
+```{r}
+# Logistic Regression
+
+# Specifying logistic regression model for classification using glm engine
+log_reg <- logistic_reg() %>%
+  set_engine("glm") %>% 
+  set_mode("classification")
+
+# Creating workflow
+log_workflow <- workflow() %>% 
+  # Adding the model
+  add_model(log_reg) %>% 
+  # Adding the recipe
+  add_recipe(titanic_recipe)
+#-----------
+# LDA
+
+# Specifying linear discriminant analysis model using MASS engine
+lda_mod <- discrim_linear() %>% 
+  set_mode("classification") %>% 
+  set_engine("MASS")
+
+# Creating workflow
+lda_workflow <- workflow() %>% 
+  # Adding the model
+  add_model(lda_mod) %>% 
+  # Adding the recipe
+  add_recipe(titanic_recipe)
+#-----------
+# QDA
+
+# Specifying quadratic discriminant analysis model using MASS engine
+qda_mod <- discrim_quad() %>% 
+  set_mode("classification") %>% 
+  set_engine("MASS")
+
+# Creating workflow
+qda_workflow <- workflow() %>% 
+  # Adding the model
+  add_model(qda_mod) %>% 
+  # Adding the recipe
+  add_recipe(titanic_recipe)
+```
 
 
 
