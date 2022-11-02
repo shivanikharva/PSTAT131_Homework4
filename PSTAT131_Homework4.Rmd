@@ -107,27 +107,32 @@ qda_workflow <- workflow() %>%
 
 ### Question 5  
 
-```{r}
-log_fit <- fit_resamples(log_workflow, titanic_folds)
-```
+```{r, eval=FALSE}
+log_fit <- fit_resamples(log_workflow, resamples = titanic_folds)
 
-```{r}
-lda_fit <- fit_resamples(lda_workflow, titanic_folds)
-```
+lda_fit <- fit_resamples(lda_workflow, resamples = titanic_folds)
 
-```{r}
-qda_fit <- fit_resamples(qda_workflow, titanic_folds)
+qda_fit <- fit_resamples(qda_workflow, resamples = titanic_folds)
+
+
+write_rds(log_fit, file= "log_fit.rds")
+write_rds(lda_fit, file= "lda_fit.rds")
+write_rds(qda_fit, file = "qda_fit.rds")
 ```
 
 ### Question 6  
 
 ```{r}
+log_fit <- read_rds("log_fit.rds")
+lda_fit <- read_rds("lda_fit.rds")
+qda_fit <- read_rds("qda_fit.rds")
+
 collect_metrics(log_fit)
 collect_metrics(lda_fit)
 collect_metrics(qda_fit)
 ```
 
-Choose LDA; slightly lower mean accuracy (by 0.01), but lower standard error by 0.04.
+Choose LDA; slightly lower mean accuracy (by 0.01), but lower standard error by 0.004.
 
 ### Question 7  
 
