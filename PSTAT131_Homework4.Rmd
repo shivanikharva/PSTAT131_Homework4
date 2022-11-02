@@ -14,6 +14,7 @@ library(tidymodels)
 library(ISLR)
 library(tidyverse)
 library(discrim)
+library(poissonreg)
 tidymodels_prefer()
 ```
 
@@ -55,6 +56,8 @@ titanic_folds
 ```
 
 ### Question 3  
+
+last question --> validation set approach
 
 ### Question 4  
 
@@ -102,10 +105,51 @@ qda_workflow <- workflow() %>%
   add_recipe(titanic_recipe)
 ```
 
+### Question 5  
 
+```{r}
+log_fit <- fit_resamples(log_workflow, titanic_folds)
+```
 
+```{r}
+lda_fit <- fit_resamples(lda_workflow, titanic_folds)
+```
 
+```{r}
+qda_fit <- fit_resamples(qda_workflow, titanic_folds)
+```
 
+### Question 6  
 
+```{r}
+collect_metrics(log_fit)
+collect_metrics(lda_fit)
+collect_metrics(qda_fit)
+```
 
+Choose LDA; slightly lower mean accuracy (by 0.01), but lower standard error by 0.04.
+
+### Question 7  
+
+```{r}
+lda_training_fit <- fit(lda_workflow, titanic_train)
+```
+
+### Question 8  
+```{r}
+# Generating predictions for LDA
+lda_tibble <- predict(lda_training_fit, new_data = titanic_test %>% 
+                        dplyr::select(-survived), type = "class")
+lda_tibble <- bind_cols(lda_tibble, titanic_test %>% 
+                              dplyr::select(survived))
+
+lda_acc <- augment(lda_training_fit, new_data = titanic_test) %>% 
+  accuracy(truth = survived, estimate = .pred_class)
+
+results <- tibble(model = "LDA", accuracy = lda_acc$.estimate)
+results
+```
+
+Accuracy a litte lower; makes sense because we trained the model on the training data
+as mentioned in lecture, this data is easier to fit to a model so it also make sense that the testing accuracy is quite close to the training accuracy
 
