@@ -132,26 +132,26 @@ collect_metrics(lda_fit)
 collect_metrics(qda_fit)
 ```
 
-Choose LDA; slightly lower mean accuracy (by 0.01), but lower standard error by 0.004.
+Choose Logistic; slightly higher mean accuracy (by 0.01), but lower standard error by 0.004. LDA is within one SE of logistic so we could go either way. however, by rule of thumb (based on what professor said in office hours), if we can choose the simpler model, we should.
 
 ### Question 7  
 
 ```{r}
-lda_training_fit <- fit(lda_workflow, titanic_train)
+log_training_fit <- fit(log_workflow, titanic_train)
 ```
 
 ### Question 8  
 ```{r}
 # Generating predictions for LDA
-lda_tibble <- predict(lda_training_fit, new_data = titanic_test %>% 
+log_tibble <- predict(log_training_fit, new_data = titanic_test %>% 
                         dplyr::select(-survived), type = "class")
-lda_tibble <- bind_cols(lda_tibble, titanic_test %>% 
+log_tibble <- bind_cols(log_tibble, titanic_test %>% 
                               dplyr::select(survived))
 
-lda_acc <- augment(lda_training_fit, new_data = titanic_test) %>% 
+log_acc <- augment(log_training_fit, new_data = titanic_test) %>% 
   accuracy(truth = survived, estimate = .pred_class)
 
-results <- tibble(model = "LDA", accuracy = lda_acc$.estimate)
+results <- tibble(model = "Logistic Regression", accuracy = log_acc$.estimate)
 results
 ```
 
