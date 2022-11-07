@@ -2,13 +2,14 @@
 title: "PSTAT131 Homework 4"
 author: "Shivani Kharva"
 date: "2022-10-31"
-output: html_document
+output:
+  html_document:
+    toc: true
 ---
 
-# Homework 4
-
-### Load the Data/ Packages
-```{r}
+### Initial Setup
+```{r, message = FALSE}
+# Loading the data/ packages
 titanic_data <- read.csv("data/titanic.csv")
 library(tidymodels)
 library(ISLR)
@@ -39,6 +40,14 @@ titanic_test <- testing(titanic_split)
 ```
 
 ```{r}
+# Verifying that the training and testing data have the correct number of outcomes
+nrow(titanic_train)/nrow(titanic_data)
+nrow(titanic_test)/nrow(titanic_data)
+```
+
+The training data has \~70% of the observations of the original data set and the testing data has \~30% of the observations of the original data set.  
+
+```{r}
 # Creating recipe identical to Homework 3
 titanic_recipe <- recipe(survived ~ pclass + sex + age + sib_sp + parch + fare, data = titanic_train) %>% 
   # Using imputation to deal with missing age values
@@ -51,13 +60,20 @@ titanic_recipe <- recipe(survived ~ pclass + sex + age + sib_sp + parch + fare, 
 
 ### Question 2  
 ```{r}
+# Creating the folds for using k-folds cross validation
 titanic_folds <- vfold_cv(titanic_train, v = 10)
 titanic_folds
 ```
 
 ### Question 3  
 
-last question --> validation set approach
+In question 2, we are creating 10 folds to conduct k-fold (10-fold in our case) cross validation. This means that R is taking the training data and assigning each observation in the training data to 1 of 10 folds. For each fold, a testing set is created consisting of that fold and the remaining k-1 folds will be the training set for that fold. At the end, we end up with k total folds.  
+
+K-fold cross validation is done by splitting the data into k folds as described above with each fold being a testing set with the other k-1 folds being the training set for that fold. Then, whichever model we are fitting is fit to each training set and tested on the corresponding testing set (each time, a different fold should be used as a validation set). Then, the average accuracy is taken from the testing set of each of the folds to measure performance (other metrics can be taken as well such as standard error).   
+
+We use k-fold cross validation rather than simply fitting and testing models on the entire training set because cross validation provides a better estimate of the testing accuracy. It is better to take the mean accuracy from several samples instead of just one accuracy from one sample because, as n increases, we reduce variation.
+
+According to the professor in lecture, the last question is supposed to ask which method creates a training set, one validation set, and a testing set. This would be the validation set approach.   
 
 ### Question 4  
 
@@ -105,16 +121,17 @@ qda_workflow <- workflow() %>%
   add_recipe(titanic_recipe)
 ```
 
+We will be fitting a total of 30 models (3 models * 10 folds) across all folds to the data.  
+
 ### Question 5  
 
 ```{r, eval=FALSE}
+# Fitting the models to the folds
 log_fit <- fit_resamples(log_workflow, resamples = titanic_folds)
-
 lda_fit <- fit_resamples(lda_workflow, resamples = titanic_folds)
-
 qda_fit <- fit_resamples(qda_workflow, resamples = titanic_folds)
 
-
+# Saving the fitted models as rds files
 write_rds(log_fit, file= "log_fit.rds")
 write_rds(lda_fit, file= "lda_fit.rds")
 write_rds(qda_fit, file = "qda_fit.rds")
@@ -123,20 +140,23 @@ write_rds(qda_fit, file = "qda_fit.rds")
 ### Question 6  
 
 ```{r}
+# Loading in the saved fitted models
 log_fit <- read_rds("log_fit.rds")
 lda_fit <- read_rds("lda_fit.rds")
 qda_fit <- read_rds("qda_fit.rds")
 
+# Printing the mean and standards errors of accuracy
 collect_metrics(log_fit)
 collect_metrics(lda_fit)
 collect_metrics(qda_fit)
 ```
 
-Choose Logistic; slightly higher mean accuracy (by 0.01), but lower standard error by 0.004. LDA is within one SE of logistic so we could go either way. however, by rule of thumb (based on what professor said in office hours), if we can choose the simpler model, we should.
+The logistic regression model has performed the best among the 3 fitted models in terms of accuracy. QDA had both the lowest mean accuracy (~0.767) and highest standard error (~0.023) among the models so that is not the model we should choose. LDA had a lower mean accuracy (~0.787) than logistic regression (~0.792) by about 0.01, but also a lower standard error by about 0.004 (LDA: ~0.015 vs. logistic: ~0.019). In fact, LDA is within one standard error of the logistic regression mean accuracy. However, by rule of thumb (based on what Professor Coburn said in her office hours), if we can choose a simpler model, we should. So, even though LDA might work here as well since it has a slightly lower standard error than logistic regression and a similar mean accuracy, it would be best to move forwards and fit the logistic regression model to the training and test data because it is simpler and still valid to use based on the mean accuracy and standard error in comparison to the other models.    
 
 ### Question 7  
 
 ```{r}
+# Fitting logistic regression to the entire training set
 log_training_fit <- fit(log_workflow, titanic_train)
 ```
 
@@ -148,6 +168,7 @@ log_tibble <- predict(log_training_fit, new_data = titanic_test %>%
 log_tibble <- bind_cols(log_tibble, titanic_test %>% 
                               dplyr::select(survived))
 
+# Getting the accuracy
 log_acc <- augment(log_training_fit, new_data = titanic_test) %>% 
   accuracy(truth = survived, estimate = .pred_class)
 
@@ -155,6 +176,7 @@ results <- tibble(model = "Logistic Regression", accuracy = log_acc$.estimate)
 results
 ```
 
-Accuracy a litte lower; makes sense because we trained the model on the training data
-as mentioned in lecture, this data is easier to fit to a model so it also make sense that the testing accuracy is quite close to the training accuracy
+The logistic regression model's average accuracy across folds was 0.7915259	and the testing accuracy is 0.7985075. These two numbers are very close because cross validation provides a better estimate of the testing accuracy.  
+
+We usually observe that the testing accuracy is lower than the training accuracy because the model tends to do better on data it has been trained on (i.e. the cross validation or training data). However, in this case, the testing accuracy is higher than the average accuracy on the testing set of each of the folds. According to Professor Coburn's office hours, this may occur because some models are more suited to do better in general on new data. Also, it may be due to the titanic data being an easier data set to model (from lecture).   
 
